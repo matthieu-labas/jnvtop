@@ -72,7 +72,9 @@ public class PanelTimeGraph extends JPanel {
 		this.title = title;
 		this.duration = duration_s * 1000; // In ms
 		
-		this.series = series;
+		this.series = Arrays.stream(series)
+				.filter(s -> s != null)
+				.toArray(n -> new String[n]); // Removes nulls from the series
 		int nSeries = series.length;
 		units = new String[nSeries];
 		curMin = new float[nSeries];
@@ -152,7 +154,9 @@ public class PanelTimeGraph extends JPanel {
 	}
 	
 	public PanelTimeGraph color(int iSerie, Color coul) {
-		this.colors[iSerie] = coul;
+		if (coul != null) {
+			this.colors[iSerie] = coul;
+		}
 		return this;
 	}
 	public PanelTimeGraph color(String serie, Color coul) {
@@ -216,7 +220,35 @@ public class PanelTimeGraph extends JPanel {
 			}
 			ts = Arrays.copyOf(ts, values[0].length);
 		}
-		repaint();
+	}
+	
+	synchronized public void setValue(long t, int index, float v) throws IllegalArgumentException {
+		if (index < 0 || index >= values.length) {
+			throw new IllegalArgumentException("Data index ("+index+") inconsistent with actual number of series ("+values.length+")");
+		}
+		
+		// Look for the corresponding timestamp
+		for (int i = inext - 1; i >= 0; i--) {
+			if (ts[i] == t) {
+				values[index][i] = v;
+				if (!Float.isNaN(v)) { // FIXME: create method
+					if (v > curMmax[index]) curMmax[index] = v;
+					if (v < curMin[index]) curMin[index] = v;
+				}
+				return;
+			}
+		}
+		
+		// Timestamp not found => add value
+		ts[inext] = t;
+		if (inext++ >= values[0].length) { // FIXME: create method
+			for (int i = 0; i < values.length; i++) {
+				values[i] = Arrays.copyOf(values[i], values[i].length + 60); // Add one minute (if sampling is at 1 Hz)
+			}
+			ts = Arrays.copyOf(ts, values[0].length);
+		}
+		
+		throw new IllegalArgumentException("Data index ("+index+") inconsistent with actual number of series ("+values.length+")");
 	}
 	
 	synchronized public void addValues(float ... vals) throws IllegalArgumentException {
@@ -252,6 +284,19 @@ public class PanelTimeGraph extends JPanel {
 			}
 		}
 		
+		// Draw series names
+		int nSeries = series.length;
+		for (int i = 0; i < nSeries; i++) {
+			if (series[i] == null || series[i].isBlank()) {
+				continue;
+			}
+			Color olc = g.getColor();
+			Dimension d = strDim(g, series[i]);
+			g.setColor(colors[i]);
+			g.drawString(series[i], i == 0 ? offX - d.width / 2 : w - offX - d.width / 2, offY - d.height/2); // TODO: Use baseline to adjust Y
+			g.setColor(olc);
+		}
+		
 		// Nothing to graph
 		if (inext == 0) {
 			return;
@@ -276,7 +321,6 @@ public class PanelTimeGraph extends JPanel {
 		}
 		
 		float rx = (float)(w - 2*offX) / duration;
-		int nSeries = series.length;
 		
 		long t = clock.get(); // Rightmost timestamp
 		// Compute x for each timestamp according to current date 't'
@@ -326,16 +370,16 @@ public class PanelTimeGraph extends JPanel {
 			// Draw max
 			String s = String.format("%.0f%s", max, units[is]);
 			int x = (is == 0 ? offX : w - offX);
-			drawStringBack(g, s, colors[is], x, is == 0, offY, false); // Max is aligned on top. First series axis is on the left (aligned on the right)
+			drawStringBack(g, s, colors[is], null, x, is == 0, offY, false); // Max is aligned on top. First series axis is on the left (aligned on the right)
 			
 			// Draw min
 			s = String.format("%.0f%s", min, units[is]);
-			drawStringBack(g, s, colors[is], x, is == 0, h - offY, true); // Min is aligned on bottom
+			drawStringBack(g, s, colors[is], null, x, is == 0, h - offY, true); // Min is aligned on bottom
 			
 			// Display current values in the center right, on top of each other
 			if (inext > 0) {
 				s = String.format("%.0f%s", values[is][inext-1], units[is]);
-				drawStringBack(g, s, colors[is], w - offX, false, h/2, is == 0);
+				drawStringBack(g, s, null, colors[is], w - offX, false, h/2, is == 0); // No background for current values
 			}
 		}
 		
@@ -349,7 +393,7 @@ public class PanelTimeGraph extends JPanel {
 		return perceivedLuminance(bk) >= 128 ? Color.BLACK : Color.WHITE;
 	}
 	
-	static public Dimension drawStringBack(Graphics2D g, String s, Color back, int x, boolean alignRight, int y, boolean alignBottom) {
+	static public Dimension drawStringBack(Graphics2D g, String s, Color back, Color text, int x, boolean alignRight, int y, boolean alignBottom) {
 		Color olc = g.getColor();
 		
 		Dimension d = strDim(g, s);
@@ -365,11 +409,15 @@ public class PanelTimeGraph extends JPanel {
 		}
 		
 		// TODO: Use baseline to adjust Y
-		g.setColor(back);
-		g.fillRect(x, y, d.width, d.height);
-		g.setColor(Color.BLACK);
+		if (back != null) {
+			g.setColor(back);
+			g.fillRect(x, y, d.width, d.height);
+		}
+		g.setColor(text == null ? Color.BLACK : text);
 		g.drawRect(x, y, d.width, d.height);
-		g.setColor(textColor(back));
+		if (back != null) {
+			g.setColor(textColor(back));
+		}
 		g.drawString(s, x+3, y-3 + d.height);
 		
 		g.setColor(olc);
