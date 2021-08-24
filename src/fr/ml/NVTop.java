@@ -13,9 +13,42 @@ import javax.swing.JFrame;
 
 public class NVTop {
 	
+	/*
+	 * nvidia-smi --help-query-gpu cheat sheet:
+	 * 
+	 * Kind of mandatory (useful for any measure required):
+	 * "timestamp"	The timestamp of when the query was made in format "YYYY/MM/DD HH:MM:SS.msec".
+	 * "name"		The official product name of the GPU. This is an alphanumeric string. For all products.
+	 * 
+	 * Useful measures:
+	 * "fan.speed"			The fan speed value is the percent of the product's maximum noise tolerance fan speed that the device's fan is currently intended to run at.
+	 * "pstate"				The current performance state for the GPU. States range from P0 (maximum performance) to P12 (minimum performance).
+	 * 
+	 * "memory.total"
+	 * "memory.used"		Total memory allocated by active contexts.
+	 * "memory.free"
+	 * 
+	 * "utilization.gpu"	Percent of time over the past sample period during which one or more kernels was executing on the GPU.
+	 * 
+	 * "temperature.gpu"	 Core GPU temperature. in degrees C.
+	 * "temperature.memory"	HBM memory temperature. in degrees C.
+	 * 
+	 * "power.draw"			The last measured power draw for the entire board, in watts.
+	 * "power.limit"		The software power limit in watts.
+	 * "enforced.power.limit"
+	 * "power.default_limit"
+	 * "power.min_limit"
+	 * "power.max_limit"
+	 * 
+	 * "clocks.current.graphics"	Current frequency of graphics (shader) clock.
+	 * "clocks.current.sm"			Current frequency of SM (Streaming Multiprocessor) clock.
+	 * "clocks.current.memory"		Current frequency of memory clock.
+	 * "clocks.max.graphics"		Maximum frequency of graphics (shader) clock.
+	 * "clocks.max.sm"				Maximum frequency of SM (Streaming Multiprocessor) clock.
+	 * "clocks.max.memory"			Maximum frequency of memory clock.
+	 */
 	
-	
-	static ProcessBuilder pb = new ProcessBuilder("nvidia-smi", "-q"); // TODO: nvidia-smi --help-query-gpu et nvidia-smi --query-gpu=utilization.memory,memory.used,temperature.memory,temperature.gpu --format=csv,noheader -lms 500
+	static ProcessBuilder pb = new ProcessBuilder("nvidia-smi", "-q"); // TODO: nvidia-smi --help-query-gpu et nvidia-smi --query-gpu=utilization.memory,memory.used,temperature.memory,temperature.gpu --format=csv,noheader,nounits -lms 500
 	static ScheduledExecutorService exe = Executors.newSingleThreadScheduledExecutor();
 	
 	public static void main(String[] args) throws IOException {
