@@ -214,7 +214,7 @@ public class PanelTimeGraph extends JPanel {
 				if (v < curMin[i]) curMin[i] = v;
 			}
 		}
-		if (inext++ >= values[0].length) {
+		if (++inext >= values[0].length) {
 			for (int i = 0; i < nVal; i++) {
 				values[i] = Arrays.copyOf(values[i], values[i].length + 60); // Add one minute (if sampling is at 1 Hz)
 			}
