@@ -73,7 +73,7 @@ public class NVMeasure extends JPanel {
 		int minorY = parseInt(conf, "graph.ticks.minors", 0);
 		int timeTicks = parseInt(conf, "graph.ticks.time", 10) * 1000; // From s to ms
 		Color bckColor = Color.decode(conf.getProperty("graph.background.panel", "#c0c0c0"));
-		Color defBckColor = Color.decode(conf.getProperty("graph.background", "#c0c0c0"));
+		Color defBckColor = Color.decode(conf.getProperty("graph.background", "#ffffff"));
 		Color defTickColor = Color.decode(conf.getProperty("graph.ticks.color", "#c0c0c0")); // Default ticks color
 		
 		PanelTimeGraph.timeFormat = conf.getProperty("graph.ticks.time.format", "HH:mm:ss");
