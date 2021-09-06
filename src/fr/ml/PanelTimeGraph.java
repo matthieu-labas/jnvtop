@@ -8,6 +8,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.Stroke;
 import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
@@ -319,6 +320,9 @@ public class PanelTimeGraph extends JPanel {
 		super.paintComponent(g1);
 		
 		Graphics2D g = (Graphics2D)g1;
+		
+		g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+		
 		int w = getWidth();
 		int h = getHeight();
 		
