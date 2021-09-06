@@ -72,6 +72,9 @@ public class NVMeasure extends JPanel {
 		int majorY = parseInt(conf, "graph.ticks.majors", 5);
 		int minorY = parseInt(conf, "graph.ticks.minors", 0);
 		int timeTicks = parseInt(conf, "graph.ticks.time", 10) * 1000; // From s to ms
+		Color bckColor = Color.decode(conf.getProperty("graph.background.panel", "#c0c0c0"));
+		Color defBckColor = Color.decode(conf.getProperty("graph.background", "#c0c0c0"));
+		Color defTickColor = Color.decode(conf.getProperty("graph.ticks.color", "#c0c0c0")); // Default ticks color
 		
 		PanelTimeGraph.timeFormat = conf.getProperty("graph.ticks.time.format", "HH:mm:ss");
 		PanelTimeGraph.titleFont = Font.decode(conf.getProperty("graph.title.font", "Tahoma-bold-12"));
@@ -105,8 +108,11 @@ public class NVMeasure extends JPanel {
 			add(graph);
 			
 			// General configuration
+			graph.setBackground(bckColor);
 			graph.yTicks(majorY, minorY);
 			graph.timeTicks(timeTicks);
+			graph.background(parseColor(conf, graphi+"background", defBckColor));
+			graph.ticksColor(parseColor(conf, graphi+"ticks.color", defTickColor));
 			
 			// Create the link between the graph and its queries
 			graphsQ.add(new GraphQueryLink(graph, queries));
@@ -121,6 +127,18 @@ public class NVMeasure extends JPanel {
 				apply(conf, k+"color", Color::decode      , val -> graph.color(_is, val));
 			}
 		}
+	}
+	
+	static private Color parseColor(Properties conf, String key, Color defColor) {
+		String strCol = conf.getProperty(key);
+		if (strCol != null && !strCol.isEmpty()) {
+			try {
+				return Color.decode(strCol);
+			} catch (NumberFormatException e) {
+				System.err.println("Cannot parse color \""+key+"\": "+e.getMessage());
+			}
+		}
+		return defColor;
 	}
 	
 	/**

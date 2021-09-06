@@ -45,6 +45,11 @@ public class PanelTimeGraph extends JPanel {
 	
 	private String title;
 	
+	/** Graph background color. */
+	private Color bckColor;
+	/** Ticks color. */
+	private Color ticksColor = Color.LIGHT_GRAY;
+	
 	/** Duration graphed, ms. */
 	private int duration;
 	
@@ -121,6 +126,16 @@ public class PanelTimeGraph extends JPanel {
 	
 	public PanelTimeGraph title(String title) {
 		this.title = title;
+		return this;
+	}
+	
+	public PanelTimeGraph background(Color bckColor) {
+		this.bckColor = bckColor;
+		return this;
+	}
+	
+	public PanelTimeGraph ticksColor(Color c) {
+		this.ticksColor = c;
 		return this;
 	}
 	
@@ -311,7 +326,10 @@ public class PanelTimeGraph extends JPanel {
 		int offX = 80; // So x = 'w - offX' is the current date, x = 'offX' is current date minus duration
 		int offY = 50;
 		
+		Color txtColor = textColor(getBackground());
+		
 		if (title != null && !title.isBlank()) {
+			g.setColor(txtColor);
 			Font olf = null;
 			if (titleFont != null) {
 				olf = g.getFont();
@@ -342,32 +360,28 @@ public class PanelTimeGraph extends JPanel {
 			return;
 		}
 		
-		g.setColor(Color.WHITE);
+		g.setColor(bckColor);
 		g.fillRect(offX, offY, w - 2*offX, h - 2*offY);
-		g.setColor(Color.BLACK);
+		g.setColor(txtColor);
 		g.drawRect(offX, offY, w - 2*offX, h - 2*offY);
 		
 		if (nTicksMinorY > 0) {
-			g.setColor(new Color(192, 192, 192, 64));
+			g.setColor(new Color(ticksColor.getRed(), ticksColor.getGreen(), ticksColor.getBlue(), 64));
 			drawYTicks(g, dashedStroke, w, h, offX, offY, nTicksMinorY);
 		}
-		// Major ticks on top
+		// Major ticks on top (FIXME: do not draw the minors matching a major)
 		if (nTicksMajorY > 0) {
-			g.setColor(new Color(192, 192, 192, 128));
+			g.setColor(new Color(ticksColor.getRed(), ticksColor.getGreen(), ticksColor.getBlue(), 128));
 			drawYTicks(g, plainStroke, w, h, offX, offY, nTicksMajorY);
 		}
 		
-		float rx = (float)(w - 2*offX) / duration;
+		float rx = (float)(w - 2*offX) / duration; // Ratio to transform time to pixels
 		
 		long t = clock.get(); // Rightmost timestamp
-		// Compute x for each timestamp according to current date 't'
-		int[] xts = new int[inext];
-		for (int ix = 0; ix < inext; ix++) {
-			xts[ix] = w - offX - Math.round((t - ts[ix]) * rx);
-		}
 		
 		// Timestamp sticks
 		if (tTicksX > 0) {
+			g.setColor(ticksColor);
 			Stroke ols = g.getStroke();
 			g.setStroke(plainStroke);
 			Font olf = g.getFont();
@@ -383,13 +397,19 @@ public class PanelTimeGraph extends JPanel {
 				g.setColor(cTick);
 				g.drawLine(x, h - offY - 1, x, offY + 1);
 				// Print timestamp
-				g.setColor(Color.BLACK);
+				g.setColor(txtColor);
 				String ts = df.format(new Date(xt));
 				Dimension dim = strDim(g, ts);
 				g.drawString(ts, x - dim.width/2, h - offY + dim.height + 3);
 			}
 			g.setFont(olf);
 			g.setStroke(ols);
+		}
+		
+		// Compute x for each timestamp according to current date 't'
+		int[] xts = new int[inext];
+		for (int ix = 0; ix < inext; ix++) {
+			xts[ix] = w - offX - Math.round((t - ts[ix]) * rx);
 		}
 		
 		for (int is = nSeries - 1; is >= 0; is--) { // First series on top
@@ -433,20 +453,18 @@ public class PanelTimeGraph extends JPanel {
 			// Draw max
 			String s = String.format("%.0f%s", max, units[is]);
 			int x = (is == 0 ? offX : w - offX);
-			drawStringBack(g, s, colors[is], null, x, is == 0, offY, false); // Max is aligned on top. First series axis is on the left (aligned on the right)
+			drawStringBack(g, s, null, colors[is], x, is == 0, offY, false); // Max is aligned on top. First series axis is on the left (aligned on the right)
 			
 			// Draw min
 			s = String.format("%.0f%s", min, units[is]);
-			drawStringBack(g, s, colors[is], null, x, is == 0, h - offY, true); // Min is aligned on bottom
+			drawStringBack(g, s, null, colors[is], x, is == 0, h - offY, true); // Min is aligned on bottom
 			
 			// Display current values in the center right, on top of each other
 			if (inext > 0) {
 				s = String.format("%.0f%s", values[is][inext-1], units[is]);
-				drawStringBack(g, s, null, colors[is], w - offX, false, h/2, is == 0); // No background for current values
+				drawStringBack(g, s, colors[is], null, w - offX, false, h/2, is == 0); // No background for current values
 			}
 		}
-		
-		g.setColor(Color.BLACK);
 	}
 	
 	static public float perceivedLuminance(Color c) {
