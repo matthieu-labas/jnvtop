@@ -1,9 +1,9 @@
 package fr.ml;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.GridLayout;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +18,15 @@ import javax.swing.JPanel;
 public class NVMeasure extends JPanel {
 	
 	private static final long serialVersionUID = 1L;
+	
+	static public int parseInt(Properties conf, String key, int defVal) {
+		try {
+			return Integer.valueOf(conf.getProperty(key, ""+defVal));
+		} catch (NumberFormatException e) {
+			System.err.println(key+": "+e.getMessage()+", setting to default "+defVal);
+			return defVal;
+		}
+	}
 	
 	/** List of graphs associated with queries (key:query). */
 	private List<GraphQueryLink> graphsQ;
@@ -42,21 +51,38 @@ public class NVMeasure extends JPanel {
 		}
 		
 		int nGraphs = imax - imin + 1; // How many graphs
-		setLayout(new GridLayout(nGraphs, 1)); // TODO: "graph.<n>.[x|y] for finer grid positionning instead of one on top of each other
-		
-		int duration;
+		String layout = conf.getProperty("graph.grid", nGraphs+","+1);
+		int rows = nGraphs, cols = 1;
 		try {
-			duration = Integer.valueOf(conf.getProperty("graph.duration", "60"));
+			String[] rowsCols = layout.split(",");
+			rows = Integer.parseInt(rowsCols[0]);
+			if (rowsCols.length < 2) {
+				cols = Math.max(1, nGraphs / rows);
+			} else {
+				cols = Integer.parseInt(rowsCols[1]);
+			}
 		} catch (NumberFormatException e) {
-			duration = 60;
-			System.err.println("graph.duration: "+e.getMessage()+", setting to default "+duration); // TODO: JOptionPane ?
+			System.err.println("Malformed \"graph.grid\" format '"+layout+"': should be <rows>,<cols> (e.g. \"2,1\"): "+e.getMessage());
+			rows = nGraphs;
+			cols = 1;
 		}
+		setLayout(new GridLayout(rows, cols));
+		
+		int duration = parseInt(conf, "graph.duration", 60);
+		int majorY = parseInt(conf, "graph.ticks.majors", 5);
+		int minorY = parseInt(conf, "graph.ticks.minors", 0);
+		int timeTicks = parseInt(conf, "graph.ticks.time", 10) * 1000; // From s to ms
+		
+		PanelTimeGraph.timeFormat = conf.getProperty("graph.ticks.time.format", "HH:mm:ss");
+		PanelTimeGraph.titleFont = Font.decode(conf.getProperty("graph.title.font", "Tahoma-bold-12"));
 		
 		for (int ig = imin; ig <= imax; ig++) {
 			String graphi = "graph."+ig+".";
 			
 			// Check which series are configured
-			List<String> series = Arrays.asList("left", "right");
+			List<String> series = new ArrayList<>(2); // Can't use Arrays.asList() as it's a read-only list that doesn't support removal
+			series.add("left");
+			series.add("right");
 			for (Iterator<String> it = series.iterator(); it.hasNext(); ) {
 				if (!conf.containsKey(graphi+it.next()+".query")) {
 					it.remove();
@@ -77,6 +103,10 @@ public class NVMeasure extends JPanel {
 			
 			PanelTimeGraph graph = new PanelTimeGraph(conf.getProperty(graphi+"title", "Graph #"+ig), duration, titles);
 			add(graph);
+			
+			// General configuration
+			graph.yTicks(majorY, minorY);
+			graph.timeTicks(timeTicks);
 			
 			// Create the link between the graph and its queries
 			graphsQ.add(new GraphQueryLink(graph, queries));
@@ -118,10 +148,8 @@ public class NVMeasure extends JPanel {
 		for (GraphQueryLink gql : graphsQ) {
 			gql.push(t, measures);
 		}
-		// ... then repaint
-		for (GraphQueryLink gql : graphsQ) {
-			gql.graph.repaint();
-		}
+		// ... then repaint all graphs at once (they are contained in this panel)
+		repaint();
 	}
 	
 	

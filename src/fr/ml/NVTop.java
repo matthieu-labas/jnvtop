@@ -38,6 +38,7 @@ public class NVTop {
 	 * "memory.free"
 	 * 
 	 * "utilization.gpu"	Percent of time over the past sample period during which one or more kernels was executing on the GPU.
+	 * "utilization.memory"	Percent of time over the past sample period during which global (device) memory was being read or written.
 	 * 
 	 * "temperature.gpu"	 Core GPU temperature. in degrees C.
 	 * "temperature.memory"	HBM memory temperature. in degrees C.
@@ -52,6 +53,7 @@ public class NVTop {
 	 * "clocks.current.graphics"	Current frequency of graphics (shader) clock.
 	 * "clocks.current.sm"			Current frequency of SM (Streaming Multiprocessor) clock.
 	 * "clocks.current.memory"		Current frequency of memory clock.
+	 * "clocks.current.video"		Current frequency of video encoder/decoder clock.
 	 * "clocks.max.graphics"		Maximum frequency of graphics (shader) clock.
 	 * "clocks.max.sm"				Maximum frequency of SM (Streaming Multiprocessor) clock.
 	 * "clocks.max.memory"			Maximum frequency of memory clock.
@@ -100,7 +102,8 @@ public class NVTop {
 		NVMeasure measurePanel = new NVMeasure(prop);
 		f.getContentPane().add(measurePanel, BorderLayout.CENTER);
 		
-		// TODO: North panel to change graphs duration
+		// TODO: North panel to control quick graphs configuration (duration, others?)
+		// TODO: Configuration panel to adjust other parameters (colors, ticks, scales, ...)
 		
 		f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		f.setSize(800, 600);
