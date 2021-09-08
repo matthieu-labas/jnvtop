@@ -9,6 +9,8 @@ It will spawn an `nvidia-smi` process, leveraging the `--query-gpu=...` and `--l
 
 It is configurable through an `nvtop.properties` file to spawn graphs and map specific GPU queries to graphs (up to 2 queries per graph: one left and one right).
 
+The release contains a runnable jar compatible with Java 14 and up. Note that the code itself is just 5 files and doesn't use fancy features above Java 8 so it could be easily recompiled for Java 8.
+
 ## Configuration
 
 The `nvtop.properties` file contains the whole configuration.
